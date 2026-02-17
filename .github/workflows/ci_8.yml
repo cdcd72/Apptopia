@@ -61,7 +61,7 @@ jobs:
 
       - name: Lint frontend
         working-directory: apps/issue-8/frontend
-        run: npm run lint || true
+        run: npm run lint
 
       - name: Build frontend
         working-directory: apps/issue-8/frontend
@@ -69,7 +69,7 @@ jobs:
 
       - name: Run frontend tests
         working-directory: apps/issue-8/frontend
-        run: npm test -- --watch=false --browsers=ChromeHeadless || true
+        run: npm test -- --watch=false --browsers=ChromeHeadless
 
   deploy-frontend:
     name: Deploy Frontend to GitHub Pages

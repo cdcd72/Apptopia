@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -209,35 +210,18 @@ func findNearestServiceArea(req LocationRequest) *ServiceArea {
 func haversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	const R = 6371.0 // Earth radius in kilometers
 	
-	lat1Rad := lat1 * 3.14159265359 / 180
-	lat2Rad := lat2 * 3.14159265359 / 180
-	deltaLat := (lat2 - lat1) * 3.14159265359 / 180
-	deltaLon := (lon2 - lon1) * 3.14159265359 / 180
+	lat1Rad := lat1 * math.Pi / 180
+	lat2Rad := lat2 * math.Pi / 180
+	deltaLat := (lat2 - lat1) * math.Pi / 180
+	deltaLon := (lon2 - lon1) * math.Pi / 180
 
-	a := 0.5 - 0.5 * cos(deltaLat) + 
-		cos(lat1Rad) * cos(lat2Rad) * (1 - cos(deltaLon)) / 2
+	a := math.Sin(deltaLat/2)*math.Sin(deltaLat/2) +
+		math.Cos(lat1Rad)*math.Cos(lat2Rad)*
+			math.Sin(deltaLon/2)*math.Sin(deltaLon/2)
 
-	return R * 2 * asin(sqrt(a))
-}
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
-func cos(x float64) float64 {
-	return 1 - x*x/2 + x*x*x*x/24
-}
-
-func sin(x float64) float64 {
-	return x - x*x*x/6 + x*x*x*x*x/120
-}
-
-func asin(x float64) float64 {
-	return x + x*x*x/6 + 3*x*x*x*x*x/40
-}
-
-func sqrt(x float64) float64 {
-	z := 1.0
-	for i := 0; i < 10; i++ {
-		z = (z + x/z) / 2
-	}
-	return z
+	return R * c
 }
 
 func getMockParkingInfo() *ParkingInfo {
