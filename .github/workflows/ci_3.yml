@@ -25,7 +25,7 @@ jobs:
         working-directory: apps/issue-3
         run: |
           echo "✅ Checking project structure..."
-          
+
           # Check required directories exist
           for dir in src tests docs data; do
             if [ -d "$dir" ]; then
@@ -35,7 +35,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           # Check README exists
           if [ -f "README.md" ]; then
             echo "✅ README.md exists"
@@ -43,25 +43,25 @@ jobs:
             echo "❌ README.md is missing"
             exit 1
           fi
-          
+
           echo "✅ All structure checks passed"
 
       - name: Validate test data
         working-directory: apps/issue-3
         run: |
           echo "📊 Checking test data..."
-          
+
           if [ -d "data/test-data" ]; then
             echo "✅ Test data directory exists"
-            
+
             # Count markdown files
             md_count=$(find data/test-data -type f -name "*.md" | wc -l)
             echo "📝 Found $md_count Markdown files"
-            
+
             # Count image files
             img_count=$(find data/test-data -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | wc -l)
             echo "🖼️ Found $img_count image files"
-            
+
             if [ $md_count -gt 0 ]; then
               echo "✅ Test data is present"
             else
@@ -75,7 +75,7 @@ jobs:
         working-directory: apps/issue-3
         run: |
           echo "📚 Validating documentation..."
-          
+
           # Check if README contains required sections
           required_sections=(
             "專案簡介"
@@ -84,7 +84,7 @@ jobs:
             "驗收基準"
             "功能需求清單"
           )
-          
+
           for section in "${required_sections[@]}"; do
             if grep -q "$section" README.md; then
               echo "✅ Section '$section' found"
@@ -94,7 +94,7 @@ jobs:
           done
 
   # Future jobs will be added here as development progresses
-  # 
+  #
   # build-and-test:
   #   needs: validate-structure
   #   runs-on: ubuntu-latest
