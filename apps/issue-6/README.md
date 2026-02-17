@@ -1,4 +1,10 @@
-# Issue #6: Markdown 連結健康檢查器
+# Issue #6: Markdown Link Health Checker / Markdown 連結健康檢查器
+
+> **English**: A CLI tool to check the health of links in Markdown files, supporting GitHub repositories, local folders, HTTP/HTTPS links, relative paths, and anchor links. Features include parallel processing, smart typo suggestions, JSON output, and zero dependencies (uses only Python standard library).
+
+> **中文**：一個用於檢查 Markdown 文件中連結健康狀態的 CLI 工具，支援 GitHub Repository、本地資料夾、HTTP/HTTPS 連結、相對路徑和錨點連結。功能包括並行處理、智慧拼寫建議、JSON 輸出，且零依賴（僅使用 Python 標準庫）。
+
+---
 
 ## 簡介
 

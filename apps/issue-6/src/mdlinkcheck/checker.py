@@ -2,6 +2,7 @@
 
 import urllib.request
 import urllib.error
+import socket
 from pathlib import Path
 from typing import Dict, List
 from dataclasses import dataclass
@@ -122,14 +123,14 @@ class LinkChecker:
                 message=f"{e.code}",
             )
         
+        except socket.timeout:
+            return LinkResult(
+                link=link,
+                status="warning",
+                message="timeout",
+            )
+        
         except urllib.error.URLError as e:
-            # Check if it's a timeout
-            if "timed out" in str(e).lower() or "timeout" in str(e).lower():
-                return LinkResult(
-                    link=link,
-                    status="warning",
-                    message="timeout",
-                )
             return LinkResult(
                 link=link,
                 status="broken",

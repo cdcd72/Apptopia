@@ -140,9 +140,15 @@ More text
     def test_check_relative_link_exists(self, tmp_path):
         """Test checking relative links that exist."""
         # Create test files
-        (tmp_path / "README.md").write_text("# Test")
-        (tmp_path / "docs").mkdir()
-        (tmp_path / "docs" / "setup.md").write_text("# Setup")
+        readme = tmp_path / "README.md"
+        readme.write_text("# Test")
+        assert readme.exists()  # Verify file creation
+        
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        setup_md = docs_dir / "setup.md"
+        setup_md.write_text("# Setup")
+        assert setup_md.exists()  # Verify file creation
         
         checker = LinkChecker()
         link = Link(url="./docs/setup.md", line_number=1, link_type="relative")
@@ -153,7 +159,9 @@ More text
     
     def test_check_relative_link_missing(self, tmp_path):
         """Test checking relative links that don't exist."""
-        (tmp_path / "README.md").write_text("# Test")
+        readme = tmp_path / "README.md"
+        readme.write_text("# Test")
+        assert readme.exists()  # Verify file creation
         
         checker = LinkChecker()
         link = Link(url="./missing.md", line_number=1, link_type="relative")
