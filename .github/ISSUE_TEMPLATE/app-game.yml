@@ -8,6 +8,33 @@ body:
       value: |
         感謝您提出遊戲類應用程式的提案！請詳細填寫以下資訊，讓需求更清楚、更容易被實作。
 
+  - type: dropdown
+    id: application-type
+    attributes:
+      label: 應用類型（必選）
+      description: 請選擇一個主要應用類型，這將協助評估實作方式、工作量與交付形式
+      options:
+        - 網頁應用程式（Web Application）
+        - 腳本（Script）
+        - CLI 工具（Command Line Tool）
+        - API 服務（API Service）
+        - 桌面應用程式（Desktop Application）
+        - 遊戲原型（Game Prototype）
+        - 函式庫／套件（Library / Package）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: is-hybrid
+    attributes:
+      label: 是否為混合型
+      description: 若需求同時涵蓋多種類型，請選擇「是」並在下方說明主次關係
+      options:
+        - 否
+        - 是（請在下方說明主次關係）
+    validations:
+      required: true
+
   - type: input
     id: game-name
     attributes:

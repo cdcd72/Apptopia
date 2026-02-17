@@ -23,7 +23,7 @@
 #
 # 根據目前 Opened issues 的狀態自動化標記 ISSUE 的分類標籤
 #
-# frontmatter-hash: f727cba1423bb4f9d9afee4229a6324add226746a96d6d6f0288781ebbec6342
+# frontmatter-hash: d1803aca092f5d338f961a0744ab4093cd765a6a5be0a65ae1897552047d075b
 
 name: "Issue Auto Labeler"
 "on":
@@ -352,12 +352,12 @@ jobs:
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
           cat > /opt/gh-aw/safeoutputs/config.json << 'GH_AW_SAFE_OUTPUTS_CONFIG_EOF'
-          {"add_labels":{"max":5},"missing_data":{},"missing_tool":{},"noop":{"max":1},"remove_labels":{"max":5}}
+          {"add_labels":{"max":10},"missing_data":{},"missing_tool":{},"noop":{"max":1},"remove_labels":{"max":10}}
           GH_AW_SAFE_OUTPUTS_CONFIG_EOF
           cat > /opt/gh-aw/safeoutputs/tools.json << 'GH_AW_SAFE_OUTPUTS_TOOLS_EOF'
           [
             {
-              "description": "Add labels to an existing GitHub issue or pull request for categorization and filtering. Labels must already exist in the repository. For creating new issues with labels, use create_issue with the labels property instead. CONSTRAINTS: Maximum 5 label(s) can be added.",
+              "description": "Add labels to an existing GitHub issue or pull request for categorization and filtering. Labels must already exist in the repository. For creating new issues with labels, use create_issue with the labels property instead. CONSTRAINTS: Maximum 10 label(s) can be added.",
               "inputSchema": {
                 "additionalProperties": false,
                 "properties": {
@@ -378,7 +378,7 @@ jobs:
               "name": "add_labels"
             },
             {
-              "description": "Remove labels from an existing GitHub issue or pull request. Silently skips labels that don't exist on the item. Use this to clean up labels or manage label lifecycles (e.g., removing 'needs-review' after review is complete). CONSTRAINTS: Maximum 5 label(s) can be removed.",
+              "description": "Remove labels from an existing GitHub issue or pull request. Silently skips labels that don't exist on the item. Use this to clean up labels or manage label lifecycles (e.g., removing 'needs-review' after review is complete). CONSTRAINTS: Maximum 10 label(s) can be removed.",
               "inputSchema": {
                 "additionalProperties": false,
                 "properties": {
@@ -1045,7 +1045,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_labels\":{\"max\":5},\"missing_data\":{},\"missing_tool\":{},\"remove_labels\":{\"max\":5}}"
+          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_labels\":{\"max\":10},\"missing_data\":{},\"missing_tool\":{},\"remove_labels\":{\"max\":10}}"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |

@@ -14,9 +14,9 @@ tools:
     toolsets: [default]
 safe-outputs:
   add-labels:
-    max: 5
+    max: 10
   remove-labels:
-    max: 5
+    max: 10
 ---
 
 # Issue Auto Labeler
@@ -45,6 +45,18 @@ Based on the README, these labels should exist in the repository:
 - `tool` - Tool-related application (CLI, Web, API, etc.)
 - `game` - Game-related application
 
+### Application Type Labels (新增)
+
+These labels correspond to the 7 application types users must select:
+
+- `web-app` - Web Application (網頁應用程式)
+- `script` - Script (腳本)
+- `cli-tool` - CLI Tool (CLI 工具)
+- `api-service` - API Service (API 服務)
+- `desktop-app` - Desktop Application (桌面應用程式)
+- `game-prototype` - Game Prototype (遊戲原型)
+- `library` - Library/Package (函式庫/套件)
+
 ## Classification Rules
 
 ### 1. Type Classification (tool vs game)
@@ -59,7 +71,43 @@ Based on the README, these labels should exist in the repository:
 - Content mentions: game, 益智, 動作, 策略, 冒險, 卡牌, 休閒
 - User selected game template
 
-### 2. Status Classification
+### 2. Application Type Classification (新增)
+
+**IMPORTANT**: Users are now required to select one of 7 application types. Apply the corresponding label:
+
+**Apply `web-app` label if:**
+- User selected "網頁應用程式（Web Application）"
+- Content mentions: website, web UI, 網站, 網頁, HTML, CSS, JavaScript, 前端, 後端
+
+**Apply `script` label if:**
+- User selected "腳本（Script）"
+- Content mentions: Shell, Python script, Node.js script, PowerShell, 自動化, 批次處理
+
+**Apply `cli-tool` label if:**
+- User selected "CLI 工具（Command Line Tool）"
+- Content mentions: command line, terminal, CLI, 命令列, console
+
+**Apply `api-service` label if:**
+- User selected "API 服務（API Service）"
+- Content mentions: REST, GraphQL, API endpoint, HTTP API, RPC, 伺服器
+
+**Apply `desktop-app` label if:**
+- User selected "桌面應用程式（Desktop Application）"
+- Content mentions: Windows app, macOS app, Linux app, Electron, 桌面程式
+
+**Apply `game-prototype` label if:**
+- User selected "遊戲原型（Game Prototype）"
+- Content mentions: game prototype, 遊戲原型, 遊戲雛形, playable demo
+
+**Apply `library` label if:**
+- User selected "函式庫／套件（Library / Package）"
+- Content mentions: library, package, module, npm package, PyPI, 套件, 函式庫, reusable
+
+**Note on hybrid types:**
+- If user selected "是（請在下方說明主次關係）" for hybrid type, apply the label for the PRIMARY application type only
+- The workflow should prioritize the explicitly selected application type from the dropdown
+
+### 3. Status Classification
 
 **Apply `proposal` label if:**
 - This is a newly opened issue
@@ -100,42 +148,56 @@ Based on the README, these labels should exist in the repository:
 
 1. **Read the issue content**: Analyze the title, body, and all provided information
 2. **Classify by type**: Determine if it's a `tool` or `game` proposal
-3. **Classify by status**: Determine the appropriate status label (`proposal`, `needs-info`, `accepted`, etc.)
-4. **Apply labels**: Use safe outputs to add appropriate labels
-5. **Remove incorrect labels**: If the issue was edited, remove labels that no longer apply
-6. **Explain your decision**: Add a brief comment explaining the applied labels (optional but helpful)
+3. **Classify by application type**: Determine the specific application type label (`web-app`, `script`, `cli-tool`, `api-service`, `desktop-app`, `game-prototype`, `library`) based on user selection
+4. **Classify by status**: Determine the appropriate status label (`proposal`, `needs-info`, `accepted`, etc.)
+5. **Apply labels**: Use safe outputs to add appropriate labels
+6. **Remove incorrect labels**: If the issue was edited, remove labels that no longer apply
+7. **Explain your decision**: Add a brief comment explaining the applied labels (optional but helpful)
 
 ## Examples
 
-### Example 1: Well-defined tool proposal
+### Example 1: Well-defined tool proposal with web-app type
 ```
 Title: [工具] 批次檔案重新命名工具
+Application Type: 網頁應用程式（Web Application）
 Body: (Contains complete specifications with problem, user flow, acceptance criteria, examples)
 ```
-**Action**: Add labels: `tool`, `accepted`
+**Action**: Add labels: `tool`, `web-app`, `accepted`
 
-### Example 2: Incomplete game proposal
+### Example 2: Incomplete game proposal with game-prototype type
 ```
 Title: [遊戲] 好玩的遊戲
+Application Type: 遊戲原型（Game Prototype）
 Body: 我想要一個好玩的遊戲，可以玩很久
 ```
-**Action**: Add labels: `game`, `needs-info`
+**Action**: Add labels: `game`, `game-prototype`, `needs-info`
 
-### Example 3: Tool proposal without clear requirements
+### Example 3: CLI Tool proposal without clear requirements
 ```
-Title: 幫我做一個工具
+Title: [工具] 資料處理工具
+Application Type: CLI 工具（Command Line Tool）
 Body: 我需要一個工具處理檔案，但是不知道怎麼描述
 ```
-**Action**: Add labels: `tool`, `needs-info`
+**Action**: Add labels: `tool`, `cli-tool`, `needs-info`
+
+### Example 4: Script proposal with complete requirements
+```
+Title: [工具] 自動化部署腳本
+Application Type: 腳本（Script）
+Body: (Contains complete specifications with problem, user flow, acceptance criteria, examples)
+```
+**Action**: Add labels: `tool`, `script`, `accepted`
 
 ## Important Notes
 
 - **Be conservative with `accepted`**: Only apply when requirements are truly clear and complete
 - **Be helpful with `needs-info`**: This signals to the user that they need to provide more details
 - **Always apply a type label**: Every issue should be either `tool` or `game`
+- **Always apply an application type label**: Every issue should have one of the 7 application type labels based on user selection
 - **Use `proposal` for new issues**: This is the default starting state
-- **Don't over-label**: Apply only the most relevant labels, typically 2-3 labels per issue
+- **Don't over-label**: Apply only the most relevant labels, typically 3-4 labels per issue (type + application type + status)
 - **Check README compliance**: Ensure proposals follow the guidelines in README.md
+- **Respect user's application type selection**: The application type label should match what the user explicitly selected in the dropdown
 
 ## Output Format
 
@@ -148,6 +210,7 @@ Example:
 add-labels:
   labels:
     - tool
+    - cli-tool
     - accepted
 ```
 

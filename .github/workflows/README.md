@@ -17,6 +17,15 @@ The Issue Auto Labeler workflow requires the following labels to be created in t
 - `tool` - Tool-related application (CLI, Web, API, etc.)
 - `game` - Game-related application
 
+### Application Type Labels (新增)
+- `web-app` - Web Application (網頁應用程式)
+- `script` - Script (腳本)
+- `cli-tool` - CLI Tool (CLI 工具)
+- `api-service` - API Service (API 服務)
+- `desktop-app` - Desktop Application (桌面應用程式)
+- `game-prototype` - Game Prototype (遊戲原型)
+- `library` - Library/Package (函式庫/套件)
+
 ### Status Labels
 - `proposal` - New proposal, not yet evaluated
 - `needs-info` - Insufficient information, waiting for clarification
@@ -36,6 +45,15 @@ You can create these labels manually through the GitHub UI or using the GitHub C
 # Type labels
 gh label create "tool" --color "0075ca" --description "Tool-related application (CLI, Web, API, etc.)"
 gh label create "game" --color "d876e3" --description "Game-related application"
+
+# Application Type labels (新增)
+gh label create "web-app" --color "1f77b4" --description "Web Application (網頁應用程式)"
+gh label create "script" --color "ff7f0e" --description "Script (腳本)"
+gh label create "cli-tool" --color "2ca02c" --description "CLI Tool (CLI 工具)"
+gh label create "api-service" --color "d62728" --description "API Service (API 服務)"
+gh label create "desktop-app" --color "9467bd" --description "Desktop Application (桌面應用程式)"
+gh label create "game-prototype" --color "8c564b" --description "Game Prototype (遊戲原型)"
+gh label create "library" --color "e377c2" --description "Library/Package (函式庫/套件)"
 
 # Status labels
 gh label create "proposal" --color "fbca04" --description "New proposal, not yet evaluated"
@@ -70,6 +88,7 @@ gh label create "wont-do" --color "ffffff" --description "Will not be implemente
 
 3. **Labeling**: The agent applies appropriate labels:
    - One type label (`tool` or `game`)
+   - One application type label (`web-app`, `script`, `cli-tool`, `api-service`, `desktop-app`, `game-prototype`, `library`)
    - One or more status labels (`proposal`, `needs-info`, `accepted`, etc.)
 
 ## Testing the Workflow
