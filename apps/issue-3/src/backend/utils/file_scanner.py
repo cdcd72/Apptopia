@@ -7,8 +7,28 @@ and manages document discovery.
 
 import hashlib
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Optional
 from datetime import datetime
+from dataclasses import dataclass
+
+
+@dataclass
+class FileInfo:
+    """Information about a file."""
+    path: Path
+    size: int
+    mtime: float
+    hash: str
+
+
+@dataclass
+class FileChange:
+    """Represents a change to a file."""
+    path: str
+    change_type: str  # 'new', 'modified', 'deleted', 'unchanged'
+    size: int = 0
+    mtime: float = 0.0
+    hash: str = ""
 
 
 class FileScanner:
@@ -26,107 +46,119 @@ class FileScanner:
     
     def scan_directory(
         self,
-        directory: Path,
+        directory: str,
         recursive: bool = True
-    ) -> Dict[str, List[Path]]:
+    ) -> List[FileInfo]:
         """
         Scan a directory for files matching patterns.
         
         Args:
-            directory: Directory to scan
+            directory: Directory path to scan
             recursive: Whether to scan subdirectories
             
         Returns:
-            Dictionary mapping file type to list of paths
-            {'markdown': [...], 'images': [...]}
+            List of FileInfo objects
         """
-        if not directory.exists() or not directory.is_dir():
+        dir_path = Path(directory)
+        if not dir_path.exists() or not dir_path.is_dir():
             raise ValueError(f"Directory does not exist: {directory}")
         
-        results = {
-            'markdown': [],
-            'images': []
-        }
+        results = []
         
         for pattern in self.file_patterns:
             if recursive:
-                files = directory.rglob(pattern)
+                files = dir_path.rglob(pattern)
             else:
-                files = directory.glob(pattern)
+                files = dir_path.glob(pattern)
             
             for file_path in files:
                 # Skip hidden files and Obsidian config
                 if self._should_skip(file_path):
                     continue
                 
-                # Categorize by extension
-                ext = file_path.suffix.lower()
-                if ext == '.md':
-                    results['markdown'].append(file_path)
-                elif ext in ['.jpg', '.jpeg', '.png']:
-                    results['images'].append(file_path)
+                # Get file info
+                stat = file_path.stat()
+                file_hash = self._compute_file_hash(file_path)
+                
+                info = FileInfo(
+                    path=file_path,
+                    size=stat.st_size,
+                    mtime=stat.st_mtime,
+                    hash=file_hash
+                )
+                results.append(info)
         
         return results
     
     def detect_changes(
         self,
-        files: List[Path]
-    ) -> Dict[str, List[Path]]:
+        directory: str,
+        recursive: bool = True
+    ) -> List[FileChange]:
         """
         Detect which files have changed since last scan.
         
         Args:
-            files: List of file paths to check
+            directory: Directory to scan
+            recursive: Whether to scan subdirectories
             
         Returns:
-            Dictionary with 'new', 'modified', 'unchanged' keys
+            List of FileChange objects
         """
-        changes = {
-            'new': [],
-            'modified': [],
-            'unchanged': [],
-            'deleted': []
-        }
+        # Scan current files
+        current_files = self.scan_directory(directory, recursive)
+        current_paths = {str(f.path): f for f in current_files}
+        cached_paths = set(str(p) for p in self._file_cache.keys())
         
-        current_files = set(files)
-        cached_files = set(self._file_cache.keys())
+        changes = []
         
         # Detect deleted files
-        deleted = cached_files - current_files
-        changes['deleted'] = list(deleted)
+        deleted_paths = cached_paths - set(current_paths.keys())
+        for path in deleted_paths:
+            changes.append(FileChange(
+                path=path,
+                change_type='deleted'
+            ))
+            # Remove from cache
+            path_obj = Path(path)
+            if path_obj in self._file_cache:
+                del self._file_cache[path_obj]
         
-        # Check existing files
-        for file_path in current_files:
-            if not file_path.exists():
-                continue
+        # Check current files
+        for path_str, file_info in current_paths.items():
+            path_obj = file_info.path
             
-            current_mtime = file_path.stat().st_mtime
-            
-            if file_path not in self._file_cache:
+            if path_obj not in self._file_cache:
                 # New file
-                changes['new'].append(file_path)
-                file_hash = self._compute_file_hash(file_path)
-                self._file_cache[file_path] = (current_mtime, file_hash)
+                changes.append(FileChange(
+                    path=path_str,
+                    change_type='new',
+                    size=file_info.size,
+                    mtime=file_info.mtime,
+                    hash=file_info.hash
+                ))
+                self._file_cache[path_obj] = (file_info.mtime, file_info.hash)
             else:
                 # Check if modified
-                cached_mtime, cached_hash = self._file_cache[file_path]
+                cached_mtime, cached_hash = self._file_cache[path_obj]
                 
-                if current_mtime > cached_mtime:
-                    # File might be modified, verify with hash
-                    current_hash = self._compute_file_hash(file_path)
-                    
-                    if current_hash != cached_hash:
-                        changes['modified'].append(file_path)
-                        self._file_cache[file_path] = (current_mtime, current_hash)
-                    else:
-                        changes['unchanged'].append(file_path)
+                if file_info.hash != cached_hash:
+                    changes.append(FileChange(
+                        path=path_str,
+                        change_type='modified',
+                        size=file_info.size,
+                        mtime=file_info.mtime,
+                        hash=file_info.hash
+                    ))
+                    self._file_cache[path_obj] = (file_info.mtime, file_info.hash)
                 else:
-                    changes['unchanged'].append(file_path)
-        
-        # Clean up deleted files from cache
-        for deleted_file in deleted:
-            if deleted_file in self._file_cache:
-                del self._file_cache[deleted_file]
+                    changes.append(FileChange(
+                        path=path_str,
+                        change_type='unchanged',
+                        size=file_info.size,
+                        mtime=file_info.mtime,
+                        hash=file_info.hash
+                    ))
         
         return changes
     
