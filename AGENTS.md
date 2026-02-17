@@ -30,7 +30,7 @@ apps/
 
 **規則：**
 
-- `[issue_id]` 應該使用 Issue 的編號（例如：`issue-1`, `issue-42`）
+- `[issue_id]` 格式為 `issue-N`，其中 N 是 Issue 的編號（例如：Issue #1 → `issue-1`, Issue #42 → `issue-42`）
 - 每個應用程式必須有獨立的 `README.md` 說明如何安裝、執行和測試
 - 保持各應用程式之間的獨立性，避免共享依賴造成的耦合
 
@@ -380,8 +380,12 @@ npx skills update
 
 ### 範例 README.md
 
+每個應用程式的 README.md 應該包含以下內容：
+
+**檔案：`apps/issue-1/README.md`**
+
 ```markdown
-# Issue #[id]: [標題]
+# Issue #1: [標題]
 
 ## 簡介
 
@@ -389,28 +393,28 @@ npx skills update
 
 ## 安裝
 
-```bash
-cd apps/issue-[id]
+\`\`\`bash
+cd apps/issue-1
 npm install  # 或其他套件管理器
-```
+\`\`\`
 
 ## 使用
 
-```bash
+\`\`\`bash
 npm start    # 或其他執行指令
-```
+\`\`\`
 
 ## 測試
 
-```bash
+\`\`\`bash
 npm test
-```
+\`\`\`
 
 ## 建置
 
-```bash
+\`\`\`bash
 npm run build
-```
+\`\`\`
 
 ## 部署
 
@@ -418,8 +422,8 @@ npm run build
 
 ## 相關連結
 
-- 原始 Issue: #[id]
-- CI/CD Workflow: [連結到工作流程]
+- 原始 Issue: #1
+- CI/CD Workflow: `.github/workflows/ci_1.yml`
 ```
 
 ## 常見問題

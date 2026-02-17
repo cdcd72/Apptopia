@@ -8,7 +8,7 @@ Each application is organized as follows:
 
 ```
 apps/
-└── issue-[id]/
+└── issue-N/          # N is the issue number (e.g., issue-1, issue-42)
     ├── README.md
     ├── src/
     ├── tests/
@@ -23,4 +23,4 @@ Please refer to [AGENTS.md](../AGENTS.md) for complete development guidelines.
 
 - `example/` - Example directory structure (not a real app)
 
-Add your app here following the naming convention `issue-[id]/`.
+Add your app here following the naming convention `issue-N/` where N is your issue number.
