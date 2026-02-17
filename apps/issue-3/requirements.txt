@@ -22,6 +22,9 @@ pytest-cov>=4.1.0
 black>=23.0.0
 pylint>=3.0.0
 
-# Future dependencies (commented out for minimal start)
-# paddleocr>=2.7.0       # OCR
-# pillow>=10.0.0         # Image processing
+# OCR dependencies (optional - use mock if not installed)
+# paddleocr>=2.7.0       # OCR engine
+# paddlepaddle>=2.5.0    # PaddleOCR backend  
+# opencv-python>=4.8.0   # Image preprocessing
+# Pillow>=10.0.0         # Image handling
+
