@@ -9,6 +9,7 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
+roles: [admin, maintainer, write, triage, read]
 tools:
   github:
     toolsets: [default]
