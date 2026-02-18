@@ -27,6 +27,9 @@ class MarkdownFile:
 class MarkdownScanner:
     """Scans and extracts links from Markdown files."""
     
+    # Security: Maximum URL length to prevent DoS attacks
+    MAX_URL_LENGTH = 2048
+    
     def __init__(self, source: str):
         self.source = source
         self.base_path: Path = Path(".")
@@ -161,7 +164,10 @@ class MarkdownScanner:
         paren_count = 1  # We're inside the opening (
         i = start
         
-        while i < len(text) and paren_count > 0:
+        # Security: Prevent DoS by limiting URL length
+        max_scan_position = min(start + self.MAX_URL_LENGTH, len(text))
+        
+        while i < max_scan_position and paren_count > 0:
             char = text[i]
             
             if char == '(':
