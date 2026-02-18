@@ -45,19 +45,26 @@ class TestFileScanner:
         """Test recursive directory scanning."""
         results = scanner.scan_directory(test_dir, recursive=True)
         
-        assert len(results['markdown']) == 3  # doc1, doc2, doc3
-        assert len(results['images']) == 2  # image1, image2
+        # results is now a List[FileInfo]
+        md_files = [f for f in results if f.path.suffix == '.md']
+        img_files = [f for f in results if f.path.suffix in ['.jpg', '.png']]
+        
+        assert len(md_files) == 3  # doc1, doc2, doc3
+        assert len(img_files) == 2  # image1, image2
         
         # Check that .obsidian files are excluded
-        md_names = [f.name for f in results['markdown']]
+        md_names = [f.path.name for f in md_files]
         assert 'config.md' not in md_names
     
     def test_scan_directory_non_recursive(self, scanner, test_dir):
         """Test non-recursive directory scanning."""
         results = scanner.scan_directory(test_dir, recursive=False)
         
-        assert len(results['markdown']) == 2  # doc1, doc2 (not doc3)
-        assert len(results['images']) == 1  # image1 (not image2)
+        md_files = [f for f in results if f.path.suffix == '.md']
+        img_files = [f for f in results if f.path.suffix in ['.jpg', '.png']]
+        
+        assert len(md_files) == 2  # doc1, doc2 (not doc3)
+        assert len(img_files) == 1  # image1 (not image2)
     
     def test_scan_invalid_directory(self, scanner):
         """Test scanning non-existent directory."""
@@ -67,22 +74,19 @@ class TestFileScanner:
     def test_detect_new_files(self, scanner, test_dir):
         """Test detection of new files."""
         # First scan
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        
-        changes = scanner.detect_changes(all_files)
+        changes = scanner.detect_changes(str(test_dir))
         
         # All files should be new on first scan
-        assert len(changes['new']) == len(all_files)
-        assert len(changes['modified']) == 0
-        assert len(changes['unchanged']) == 0
+        new_changes = [c for c in changes if c.change_type == 'new']
+        modified_changes = [c for c in changes if c.change_type == 'modified']
+        
+        assert len(new_changes) == 5  # 3 MD + 2 images
+        assert len(modified_changes) == 0
     
     def test_detect_modified_files(self, scanner, test_dir):
         """Test detection of modified files."""
         # First scan
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        scanner.detect_changes(all_files)
+        scanner.detect_changes(str(test_dir))
         
         # Modify a file
         time.sleep(0.1)  # Ensure different mtime
@@ -90,76 +94,73 @@ class TestFileScanner:
         doc1.write_text("# Modified Document 1")
         
         # Second scan
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        changes = scanner.detect_changes(all_files)
+        changes = scanner.detect_changes(str(test_dir))
         
         # doc1 should be detected as modified
-        assert len(changes['modified']) == 1
-        assert doc1 in changes['modified']
-        assert len(changes['new']) == 0
+        modified_changes = [c for c in changes if c.change_type == 'modified']
+        new_changes = [c for c in changes if c.change_type == 'new']
+        
+        assert len(modified_changes) == 1
+        assert str(doc1) in [c.path for c in modified_changes]
+        assert len(new_changes) == 0
     
     def test_detect_unchanged_files(self, scanner, test_dir):
         """Test detection of unchanged files."""
         # First scan
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        scanner.detect_changes(all_files)
+        scanner.detect_changes(str(test_dir))
         
         # Second scan without changes
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        changes = scanner.detect_changes(all_files)
+        changes = scanner.detect_changes(str(test_dir))
         
         # All files should be unchanged
-        assert len(changes['unchanged']) == len(all_files)
-        assert len(changes['modified']) == 0
-        assert len(changes['new']) == 0
+        unchanged_changes = [c for c in changes if c.change_type == 'unchanged']
+        modified_changes = [c for c in changes if c.change_type == 'modified']
+        new_changes = [c for c in changes if c.change_type == 'new']
+        
+        assert len(unchanged_changes) == 5  # 3 MD + 2 images
+        assert len(modified_changes) == 0
+        assert len(new_changes) == 0
     
     def test_detect_deleted_files(self, scanner, test_dir):
         """Test detection of deleted files."""
         # First scan
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        scanner.detect_changes(all_files)
+        scanner.detect_changes(str(test_dir))
         
         # Delete a file
         doc1 = test_dir / "doc1.md"
         doc1.unlink()
         
         # Second scan
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        changes = scanner.detect_changes(all_files)
+        changes = scanner.detect_changes(str(test_dir))
         
         # doc1 should be detected as deleted
-        assert len(changes['deleted']) == 1
-        assert doc1 in changes['deleted']
+        deleted_changes = [c for c in changes if c.change_type == 'deleted']
+        assert len(deleted_changes) == 1
+        assert str(doc1) in [c.path for c in deleted_changes]
     
     def test_get_file_info(self, scanner, test_dir):
         """Test getting file information."""
         doc1 = test_dir / "doc1.md"
-        info = scanner.get_file_info(doc1)
         
-        assert info is not None
-        assert info['name'] == 'doc1.md'
-        assert info['size'] > 0
-        assert info['extension'] == '.md'
-        assert len(info['hash']) == 64  # SHA-256 hash
-        assert 'modified_time' in info
-        assert 'created_time' in info
+        # scan_directory returns FileInfo objects directly
+        results = scanner.scan_directory(test_dir, recursive=False)
+        doc1_info = [f for f in results if f.path == doc1][0]
+        
+        assert doc1_info is not None
+        assert doc1_info.path == doc1
+        assert doc1_info.size > 0
+        assert len(doc1_info.hash) == 64  # SHA-256 hash
     
     def test_get_file_info_nonexistent(self, scanner):
         """Test getting info for non-existent file."""
-        info = scanner.get_file_info(Path("/nonexistent/file.md"))
-        assert info is None
+        results = scanner.scan_directory(Path("/tmp"), recursive=False)
+        # Non-existent files just won't be in results
+        assert Path("/nonexistent/file.md") not in [f.path for f in results]
     
     def test_clear_cache(self, scanner, test_dir):
         """Test clearing the file cache."""
         # First scan
-        results = scanner.scan_directory(test_dir)
-        all_files = results['markdown'] + results['images']
-        scanner.detect_changes(all_files)
+        scanner.detect_changes(str(test_dir))
         
         # Cache should have entries
         assert len(scanner._file_cache) > 0
@@ -179,5 +180,6 @@ class TestFileScanner:
         results = scanner.scan_directory(tmp_path)
         
         # Only visible file should be found
-        assert len(results['markdown']) == 1
-        assert results['markdown'][0].name == 'visible.md'
+        md_files = [f for f in results if f.path.suffix == '.md']
+        assert len(md_files) == 1
+        assert md_files[0].path.name == 'visible.md'

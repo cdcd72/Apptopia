@@ -92,6 +92,9 @@ class Document:
     # Chunks (for vector indexing)
     chunks: List[DocumentChunk] = field(default_factory=list)
     
+    # Relationships to other documents
+    relationships: List['Relationship'] = field(default_factory=list)
+    
     # Status
     status: DocumentStatus = DocumentStatus.PENDING
     last_indexed: Optional[datetime] = None

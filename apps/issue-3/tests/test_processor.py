@@ -174,7 +174,7 @@ class TestDocumentProcessor:
         assert len(doc1_obj.relationships) > 0
         
         # Check for wikilink relationship
-        wikilink_rels = [r for r in doc1_obj.relationships if r.type == 'wikilink']
+        wikilink_rels = [r for r in doc1_obj.relationships if r.relationship_type == 'wikilink']
         assert len(wikilink_rels) > 0
     
     def test_get_knowledge_base(self, tmp_path):

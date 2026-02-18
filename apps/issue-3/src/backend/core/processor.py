@@ -358,8 +358,10 @@ class DocumentProcessor:
             
             # Find matching documents
             for link in wikilinks:
-                # Simple matching by filename
-                link_name = link.split('|')[0].split('#')[0].strip()
+                # Extract target from dict (wikilinks are dicts not strings)
+                link_target = link.get('target', '') if isinstance(link, dict) else link
+                link_name = link_target.strip()
+                
                 for other_path, other_doc in self.documents.items():
                     if other_path == doc_path:
                         continue
@@ -367,40 +369,53 @@ class DocumentProcessor:
                     other_name = Path(other_path).stem
                     if link_name == other_name:
                         rel = Relationship(
-                            target_doc=other_path,
-                            type='wikilink',
-                            score=1.0,  # Manual link = 100% confidence
-                            metadata={'link_text': link}
+                            source_doc_id=doc.doc_id,
+                            target_doc_id=other_doc.doc_id,
+                            relationship_type='wikilink',
+                            strength=1.0,  # Manual link = 100% confidence
+                            manual_link_score=1.0,
+                            metadata={'link': link}
                         )
                         relationships.append(rel)
             
             # 2. Find similar documents by vector similarity
-            if doc.embedding:
+            # Use first chunk's embedding as document representation
+            if doc.chunks and doc.chunks[0].embedding:
                 try:
                     # Query for similar documents
                     results = self.vector_store.query(
-                        query_embedding=doc.embedding,
+                        query_embedding=doc.chunks[0].embedding,
                         top_k=6  # Get 6 to filter out self
                     )
                     
                     for result in results:
                         # Skip self-references
-                        source_file = result.get('metadata', {}).get('source_file')
-                        if source_file and source_file != doc_path:
+                        result_doc_id = result.get('id', '').split('_chunk_')[0]
+                        if result_doc_id and result_doc_id != doc.doc_id:
                             # Check if not already linked
-                            if not any(r.target_doc == source_file for r in relationships):
-                                rel = Relationship(
-                                    target_doc=source_file,
-                                    type='similarity',
-                                    score=result.get('score', 0.0),
-                                    metadata={'distance': result.get('distance', 0.0)}
-                                )
-                                relationships.append(rel)
+                            if not any(r.target_doc_id == result_doc_id for r in relationships):
+                                # Find the target document
+                                target_doc = None
+                                for other_doc in self.documents.values():
+                                    if other_doc.doc_id == result_doc_id:
+                                        target_doc = other_doc
+                                        break
+                                
+                                if target_doc:
+                                    rel = Relationship(
+                                        source_doc_id=doc.doc_id,
+                                        target_doc_id=target_doc.doc_id,
+                                        relationship_type='similarity',
+                                        strength=result.get('score', 0.0),
+                                        vector_score=result.get('score', 0.0),
+                                        metadata={'distance': result.get('distance', 0.0)}
+                                    )
+                                    relationships.append(rel)
                 except Exception as e:
                     logger.debug(f"Error finding similar docs for {doc_path}: {e}")
             
-            # Sort by score and keep top 5
-            relationships.sort(key=lambda r: r.score, reverse=True)
+            # Sort by strength and keep top 5
+            relationships.sort(key=lambda r: r.strength, reverse=True)
             doc.relationships = relationships[:5]
     
     def get_knowledge_base(self) -> KnowledgeBase:
