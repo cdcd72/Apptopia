@@ -171,8 +171,6 @@ class LinkChecker:
 
     def _is_cloudflare_challenge(self, error: urllib.error.HTTPError) -> bool:
         """Check if HTTPError indicates a Cloudflare Challenge."""
-        if not hasattr(error, 'headers'):
-            return False
         cf_mitigation = error.headers.get('cf-mitigated', '').lower()
         server = error.headers.get('Server', '').lower()
         return 'challenge' in cf_mitigation or 'cloudflare' in server
