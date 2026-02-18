@@ -195,11 +195,10 @@ class MarkdownScanner:
             return '\n' * match.group(0).count('\n')
         
         # Remove fenced code blocks (``` or ~~~) while preserving line numbers
-        content = re.sub(r'```[\s\S]*?```', replace_with_newlines, content)
-        content = re.sub(r'~~~[\s\S]*?~~~', replace_with_newlines, content)
+        content = re.sub(r'```[\s\S]*?```|~~~[\s\S]*?~~~', replace_with_newlines, content)
         
         # Remove inline code (same line only, no line number impact)
-        content = re.sub(r'`[^`\n]+`', '', content)
+        content = re.sub(r'`[^`\n]*?`', '', content)
         
         # Remove indented code blocks (4 spaces or 1 tab at start of line)
         lines = content.split("\n")
