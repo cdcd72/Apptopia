@@ -106,6 +106,35 @@ This is another `[inline code](https://ignored.com)`.
         assert links[2].url == "https://example.com/func_(a_(b))"
         assert links[3].url == "url1"
         assert links[4].url == "url2"
+    
+    def test_url_length_limit(self):
+        """Test that URLs exceeding MAX_URL_LENGTH are not extracted (DoS protection)."""
+        scanner = MarkdownScanner(".")
+        
+        # Create a URL that exceeds the limit
+        long_url = "https://example.com/" + "a" * 3000
+        content = f"[Link with too long URL]({long_url})"
+        
+        links = scanner._extract_links(content)
+        
+        # Should not extract the URL that exceeds the limit
+        assert len(links) == 0
+    
+    def test_url_at_limit_boundary(self):
+        """Test URL extraction at the length limit boundary."""
+        scanner = MarkdownScanner(".")
+        
+        # Create a URL just under the limit
+        url_base = "https://example.com/"
+        remaining_length = scanner.MAX_URL_LENGTH - len(url_base) - 1
+        valid_url = url_base + "a" * remaining_length
+        
+        content = f"[Valid long URL]({valid_url})"
+        links = scanner._extract_links(content)
+        
+        # Should extract the URL within the limit
+        assert len(links) == 1
+        assert links[0].url == valid_url
 
     def test_line_numbers_with_code_blocks(self):
         """Test that line numbers are accurate even with code blocks."""
