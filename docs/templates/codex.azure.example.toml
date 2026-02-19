@@ -1,0 +1,12 @@
+model = "gpt-5-codex"
+model_provider = "azure"
+
+[model_providers.azure]
+name = "Azure OpenAI"
+base_url = "https://YOUR_RESOURCE_NAME.openai.azure.com/openai/v1/"
+env_key = "AZURE_OPENAI_API_KEY"
+wire_api = "chat"
+
+[model_providers.azure.query_params]
+api-version = "2025-04-01-preview"
+
