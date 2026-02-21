@@ -19,10 +19,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      - name: Validate required secrets
+        env:
+          AZURE_OPENAI_API_KEY_CODEX: ${{ secrets.AZURE_OPENAI_API_KEY_CODEX }}
+          CODEX_GITHUB_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
+        run: |
+          missing=0
+
+          if [ -z "$AZURE_OPENAI_API_KEY_CODEX" ]; then
+            echo "Missing required secret: AZURE_OPENAI_API_KEY_CODEX"
+            missing=1
+          fi
+
+          if [ -z "$CODEX_GITHUB_TOKEN" ]; then
+            echo "Missing required secret: CODEX_GITHUB_TOKEN"
+            echo "This token must be able to push workflow files under .github/workflows/."
+            echo "Use a token with workflow write access (for example: classic PAT with repo + workflow scopes)."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.CODEX_GITHUB_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -31,15 +55,6 @@ jobs:
 
       - name: Install Codex CLI
         run: npm install -g @openai/codex
-
-      - name: Validate required secrets
-        env:
-          AZURE_OPENAI_API_KEY_CODEX: ${{ secrets.AZURE_OPENAI_API_KEY_CODEX }}
-        run: |
-          if [ -z "$AZURE_OPENAI_API_KEY_CODEX" ]; then
-            echo "Missing required secret: AZURE_OPENAI_API_KEY_CODEX"
-            exit 1
-          fi
 
       - name: Prepare git identity
         run: |
@@ -82,7 +97,7 @@ jobs:
       - name: Pick latest open accepted issue and branch name
         id: pick
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
@@ -149,7 +164,7 @@ jobs:
         if: steps.pick.outputs.issue_exists == 'true'
         env:
           AZURE_OPENAI_API_KEY_CODEX: ${{ secrets.AZURE_OPENAI_API_KEY_CODEX }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ steps.pick.outputs.issue_number }}
           ISSUE_TITLE: ${{ steps.pick.outputs.issue_title }}
