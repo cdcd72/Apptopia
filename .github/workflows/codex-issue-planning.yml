@@ -78,7 +78,7 @@ jobs:
           model_reasoning_summary = "detailed"
           EOT
 
-      - name: Analyze open issues and comment with plan/questions
+      - name: Analyze open issues, comment plan/questions, and apply accepted label by confidence
         env:
           AZURE_OPENAI_API_KEY_CODEX: ${{ secrets.AZURE_OPENAI_API_KEY_CODEX }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,7 +90,11 @@ jobs:
           請自動幫我取得目前 GitHub Repo 所有 Opened issues（最多 $ISSUE_LIMIT 筆），逐一查看每一條 Issue 的規格。
           如果最新一條留言是我自己的留言（以 $GITHUB_ACTOR 判斷），就請跳過這條 Issue。
           如果最後一條不是我自己的留言，就分析整份 Issue 的討論串。
+          對每一條被分析的 Issue，都要先評估「規格完整度信心指數」，分數範圍是 0 到 100（整數）。
+          請把信心指數寫進你的 Issue 留言中，格式為：規格完整度信心指數：<分數>/100。
           若開發的需求不夠明確，請直接留言請樓主提供釐清的資訊。
           請不要開始開發每一項需求。
           如果需求已經足夠明確，請先制訂開發計畫，並留言在 Issue 之中。
+          當且僅當信心指數 > 90 時，請幫該 Issue 加上 accepted 標籤。
+          若信心指數 <= 90，則不要加 accepted 標籤。
           請直接執行，不要輸出額外說明。"

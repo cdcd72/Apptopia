@@ -1,0 +1,192 @@
+name: Issue Implementing with Codex CLI
+
+on:
+  schedule:
+    - cron: "30 */6 * * *" # Every 6 hours (UTC), offset from planning workflow
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: codex-issue-implementing
+  cancel-in-progress: false
+
+jobs:
+  implement-latest-accepted-issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Codex CLI
+        run: npm install -g @openai/codex
+
+      - name: Validate required secrets
+        env:
+          AZURE_OPENAI_API_KEY_CODEX: ${{ secrets.AZURE_OPENAI_API_KEY_CODEX }}
+        run: |
+          if [ -z "$AZURE_OPENAI_API_KEY_CODEX" ]; then
+            echo "Missing required secret: AZURE_OPENAI_API_KEY_CODEX"
+            exit 1
+          fi
+
+      - name: Prepare git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Codex config for Azure
+        run: |
+          mkdir -p ~/.codex
+          cat <<EOT > ~/.codex/config.toml
+          approval_policy = "on-request"
+          sandbox_mode   = "workspace-write"
+
+          profile = "aoai"
+
+          [features]
+          multi_agent = true
+          steer = true
+
+          #####################
+          ### Azure Foundry ###
+          #####################
+
+          [model_providers.azure]
+          name         = "Azure OpenAI"
+          base_url     = "https://duotify-ai-foundry.cognitiveservices.azure.com/openai"
+          env_key      = "AZURE_OPENAI_API_KEY_CODEX"
+          wire_api     = "responses"
+          query_params = { api-version = "2025-04-01-preview" }
+
+          [profiles.aoai]
+          model_provider          = "azure"
+          model                   = "gpt-5.2-codex"
+          preferred_auth_method   = "apikey"
+          wire_api                = "responses"
+          model_reasoning_effort  = "high"
+          model_reasoning_summary = "detailed"
+          EOT
+
+      - name: Pick latest open accepted issue and branch name
+        id: pick
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+
+          ISSUE_JSON="$(gh issue list \
+            --repo "$GH_REPO" \
+            --state open \
+            --label accepted \
+            --search "sort:created-desc" \
+            --limit 1 \
+            --json number,title,url,createdAt)"
+
+          ISSUE_COUNT="$(echo "$ISSUE_JSON" | jq 'length')"
+          if [ "$ISSUE_COUNT" -eq 0 ]; then
+            echo "issue_exists=false" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=no-accepted-issue" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          ISSUE_NUMBER="$(echo "$ISSUE_JSON" | jq -r '.[0].number')"
+          ISSUE_TITLE="$(echo "$ISSUE_JSON" | jq -r '.[0].title')"
+          ISSUE_URL="$(echo "$ISSUE_JSON" | jq -r '.[0].url')"
+
+          EXISTING_PR_URL="$(gh pr list \
+            --repo "$GH_REPO" \
+            --state open \
+            --search "is:open is:pr repo:$GH_REPO \"#${ISSUE_NUMBER}\" in:body" \
+            --json url \
+            --jq '.[0].url // empty')"
+
+          if [ -n "$EXISTING_PR_URL" ]; then
+            echo "issue_exists=false" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=already-has-open-pr" >> "$GITHUB_OUTPUT"
+            echo "existing_pr_url=$EXISTING_PR_URL" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          ISSUE_SLUG="$(echo "$ISSUE_TITLE" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
+            | cut -c1-42)"
+          if [ -z "$ISSUE_SLUG" ]; then
+            ISSUE_SLUG="accepted-issue"
+          fi
+
+          ISSUE_BRANCH="issue-${ISSUE_NUMBER}-${ISSUE_SLUG}"
+          if git ls-remote --exit-code --heads origin "$ISSUE_BRANCH" >/dev/null 2>&1; then
+            ISSUE_BRANCH="${ISSUE_BRANCH}-run-${GITHUB_RUN_NUMBER}"
+          fi
+
+          echo "issue_exists=true" >> "$GITHUB_OUTPUT"
+          echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "issue_title=$ISSUE_TITLE" >> "$GITHUB_OUTPUT"
+          echo "issue_url=$ISSUE_URL" >> "$GITHUB_OUTPUT"
+          echo "issue_branch=$ISSUE_BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Create working branch before implementation
+        if: steps.pick.outputs.issue_exists == 'true'
+        run: |
+          git checkout -b "${{ steps.pick.outputs.issue_branch }}"
+
+      - name: Implement latest accepted issue and open PR
+        if: steps.pick.outputs.issue_exists == 'true'
+        env:
+          AZURE_OPENAI_API_KEY_CODEX: ${{ secrets.AZURE_OPENAI_API_KEY_CODEX }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ steps.pick.outputs.issue_number }}
+          ISSUE_TITLE: ${{ steps.pick.outputs.issue_title }}
+          ISSUE_URL: ${{ steps.pick.outputs.issue_url }}
+          ISSUE_BRANCH: ${{ steps.pick.outputs.issue_branch }}
+        run: |
+          codex exec --dangerously-bypass-approvals-and-sandbox --color never "
+          你正在 GitHub Actions 中執行，請使用 gh CLI、git 與本地檔案操作完成任務。
+          目標是處理最新一筆 open 且有 accepted 標籤的 Issue。
+          本次目標 Issue 為 #$ISSUE_NUMBER：$ISSUE_TITLE
+          Issue URL：$ISSUE_URL
+          目前已經建立好工作分支：$ISSUE_BRANCH。請在這個分支上開發，不要切回 main。
+
+          請先完整閱讀 Issue 內容與留言，再依需求實作 App。
+          實作時請遵守 repo 根目錄 AGENTS.md 規範，至少包含：
+          - App 放在 apps/issue-$ISSUE_NUMBER/
+          - 補齊 apps/issue-$ISSUE_NUMBER/README.md（安裝、使用、測試、建置、部署、Issue 連結）
+          - 建立或更新 .github/workflows/ci_$ISSUE_NUMBER.yml（只觸發 apps/issue-$ISSUE_NUMBER/** 與自身 workflow）
+
+          開發完成後請執行必要測試與建置，確認可用。
+          接著請：
+          1. git add / commit（commit message 要清楚描述實作內容）
+          2. git push origin $ISSUE_BRANCH
+          3. 用 gh pr create 發 PR 到 main
+
+          PR 內容要求：
+          - 標題要有意義且包含 Issue #$ISSUE_NUMBER
+          - 內文需包含 Summary、Validation（實際執行命令）、以及 Closes #$ISSUE_NUMBER
+
+          若實作後沒有任何檔案變更，請不要建立 PR，改為在 Issue 留言說明原因。
+          請直接執行，不要輸出額外說明。"
+
+      - name: Report skipped run
+        if: steps.pick.outputs.issue_exists != 'true'
+        run: |
+          echo "No implementation executed."
+          echo "Reason: ${{ steps.pick.outputs.skip_reason }}"
+          if [ "${{ steps.pick.outputs.skip_reason }}" = "already-has-open-pr" ]; then
+            echo "Existing PR: ${{ steps.pick.outputs.existing_pr_url }}"
+          fi
