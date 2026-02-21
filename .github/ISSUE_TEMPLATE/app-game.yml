@@ -18,6 +18,7 @@ body:
         - 腳本（Script）
         - CLI 工具（Command Line Tool）
         - API 服務（API Service）
+        - 背景排程服務（Background Tasks）
         - 桌面應用程式（Desktop Application）
         - 遊戲原型（Game Prototype）
         - 函式庫／套件（Library / Package）
