@@ -27,15 +27,29 @@ npm start
 
 可選用 `DATA_DIR` 指定資料儲存位置。`data/` 會保存：對話記錄、下載記錄、佇列狀態與使用者設定。
 
+## 限制
+
+- 影片長度上限：60 分鐘
+- 影片檔案大小上限：50 MB（依 Telegram Bot API 文件，未來可能調整）
+- URL 長度上限：1000 bytes
+
+## 環境需求
+
+- Node.js 22+
+- 已安裝 `yt-dlp`（需在 PATH 或設定 `YT_DLP_PATH`）
+- 若遇到無法取得影片長度的站點，可安裝 `ffprobe`（ffmpeg）以支援下載後長度檢查
+
 ## 測試
 
 ```bash
+cd apps/issue-27
 npm test
 ```
 
 ## 建置
 
 ```bash
+cd apps/issue-27
 npm run build
 ```
 
@@ -45,5 +59,5 @@ npm run build
 
 ## 相關連結
 
-- 原始 Issue: #27
+- 原始 Issue: https://github.com/doggy8088/Apptopia/issues/27
 - CI/CD Workflow: `.github/workflows/ci_27.yml`
