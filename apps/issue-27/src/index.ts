@@ -1,6 +1,12 @@
 import path from "node:path";
 import { runBot } from "./bot";
 
+// Enable node-telegram-bot-api's improved file sending behavior and silence
+// the NTBA_FIX_350 deprecation warning (official library toggle).
+if (!process.env.NTBA_FIX_350) {
+  process.env.NTBA_FIX_350 = "1";
+}
+
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
   console.error("Missing TELEGRAM_BOT_TOKEN environment variable.");

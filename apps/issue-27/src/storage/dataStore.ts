@@ -52,6 +52,14 @@ export class DataStore {
     });
   }
 
+  async listKnownChatIds(): Promise<string[]> {
+    const settings = await readJsonFile<Record<string, UserSettings>>(this.settingsPath, {});
+    return Object.keys(settings)
+      .map((chatId) => chatId.trim())
+      .filter((chatId) => chatId.length > 0)
+      .sort((a, b) => a.localeCompare(b));
+  }
+
   async upsertUserSettings(chatId: string): Promise<UserSettings> {
     return this.withWriteLock(async () => {
       const settings = await readJsonFile<Record<string, UserSettings>>(this.settingsPath, {});
