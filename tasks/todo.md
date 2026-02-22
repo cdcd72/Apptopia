@@ -1,32 +1,29 @@
-# Issue 17 V1 Bootstrap Todo
+# Issue 27 V1 Todo
 
-## Scope (Initial implementation)
-- Build a TypeScript CLI scaffold for `k8s-upgrade-validator`.
-- Support version validation for Kubernetes minor versions 1.25+
-- Implement offline scanning from local manifests (`--from-manifests`) for V1 bootstrap.
-- Analyze resources against API deprecation/removal rules.
-- Output reports in `text`, `json`, and `html`.
-- Return non-zero exit code when breaking/warning findings exist; `0` when fully compatible.
-- Add CI workflow `.github/workflows/ci_17.yml`.
+## Scope
+- Implement a Telegram bot that downloads videos via `yt-dlp` and returns them if within limits.
+- Enforce duration <= 60 minutes and file size <= Telegram Bot API limit.
+- Persist conversation logs, downloads, queue status, and user settings under `apps/issue-27/data/`.
+- Provide tests, README, and CI workflow.
 
 ## Acceptance criteria (verifiable)
-- [x] Given a manifest using `policy/v1beta1` PDB and versions `1.28 -> 1.31`, report marks it as breaking and suggests `policy/v1`.
-- [x] Given only compatible manifests, CLI exits with code `0` and text report states compatibility.
-- [x] `--output json` writes schema-compliant report object.
-- [x] Invalid target version returns a clear error and supported version range.
+- [ ] Valid URL triggers download via `yt-dlp` and returns a video to Telegram.
+- [ ] Video duration > 60 minutes returns an error before sending the file.
+- [ ] Video size above Telegram Bot API limit returns an error.
+- [ ] Single-download queue processes one job at a time and reports queue position.
+- [ ] Conversation logs, download logs, queue state, and user settings are persisted under `apps/issue-27/data/`.
 
-## Verification tasks
-- [x] `cd apps/issue-17 && npm test`
-- [x] `cd apps/issue-17 && npm run build`
-- [x] `cd apps/issue-17 && npm run check`
+## Verification
+- [x] `cd apps/issue-27 && npm run lint`
+- [x] `cd apps/issue-27 && npm test`
+- [x] `cd apps/issue-27 && npm run build`
 
-## Risk level
-- Medium: Kubernetes live-cluster scanning via kubeconfig is not fully implemented in this bootstrap slice.
+## Assumptions
+- `yt-dlp` is installed and available on PATH (or `YT_DLP_PATH`).
+- Telegram Bot API file size limit remains 50 MB per available Bot API references.
+
+## Risks
+- Medium: external tools (`yt-dlp`, `ffprobe`) required at runtime.
 
 ## Rollback notes
-- Revert only files under `apps/issue-17/`, `.github/workflows/ci_17.yml`, and `tasks/todo.md`.
-
-## Working notes
-- Prefer minimal in-repo deprecation rule dataset first, then expand.
-- Keep analyzer pure and deterministic for fast unit tests.
-- Keep report schema explicit to support CI integrations.
+- Revert files under `apps/issue-27/`, `.github/workflows/ci_27.yml`, and `tasks/todo.md`.
