@@ -10,7 +10,7 @@
 - [技能管理](#技能管理)
 - [開發流程](#開發流程)
 - [技術選型與品質標準](#技術選型與品質標準)
-- [PowerShell 中正確傳遞多行文字給 CLI（`--body`）的指引](#powershell-cli-multiline-body)
+- [Bash/PowerShell 多行文字與 commit 換行規範](#powershell-cli-multiline-body)
 
 ## 專案結構規範
 
@@ -448,13 +448,13 @@ npm run build
 - 在實作與交付時，應依據驗收標準逐項驗證並記錄結果。
 
 <a id="powershell-cli-multiline-body"></a>
-## PowerShell 中正確傳遞多行文字給 CLI（`--body`）的指引
+## Bash/PowerShell 多行文字與 commit 換行規範
 
 ### 適用情境
 
-- 在 PowerShell（含 `pwsh`）中執行 CLI 指令
-- CLI 參數（如 `--body`、`--message`、`--description`）需要多行文字
-- 指令透過 `-Command "..."` 傳遞
+- 在 Bash 或 PowerShell（含 `pwsh`）中執行 CLI 指令
+- 需要傳遞多行參數，例如 `git commit -m`、`gh pr create --body`、`--message`、`--description`
+- 指令透過互動 shell 或 `-Command "..."` 傳遞
 
 ---
 
@@ -462,14 +462,14 @@ npm run build
 
 #### 核心事實
 
-- PowerShell 的換行 escape 字元不是 `\n`，而是反引號加 n：`` `n ``
-- CLI（例如 `gh`）不會解析 `\n` 或 `\r\n`
 - CLI 只接收「Shell 已經解析完成的字串」
+- 目標是傳遞實際換行（LF），不是字面字串 `\n`
+- Bash 與 PowerShell 的 escape 規則不同，不可互相套用
 
 #### 必要條件
 
-- 換行必須在 PowerShell 字串解析階段就轉成實際的 LF（Line Feed）
-- 否則 CLI 會收到字面字串 `\n`
+- 換行必須在 shell 字串解析階段就轉成實際的 LF（Line Feed）
+- 否則 CLI（例如 `git`、`gh`）會收到字面字串 `\n`
 
 ---
 
@@ -477,57 +477,80 @@ npm run build
 
 #### 1. 禁止事項
 
-- 禁止在 PowerShell 中使用 `\n` 表示換行
-- 禁止假設 CLI 會自動轉換 `\n`
+- 禁止在 commit/PR 內容中輸出字面 `\n` 當作換行
+- 禁止假設 CLI 會自動把 `\n` 轉成真正換行
+- 禁止直接把 Bash 的 escape 寫法複製到 PowerShell（反之亦然）
 
-#### 2. 正確寫法（唯一允許）
+#### 2. `git commit` 優先寫法（跨 shell 最穩定）
 
-在 PowerShell 的雙引號字串中，一律使用 `` `n `` 表示換行
+- 優先使用多個 `-m`，避免 escape 差異
+- 第一個 `-m` 為標題，第二個 `-m` 起為內文段落
 
-##### 範例
-
-```powershell
-gh pr create `
-  --title "feat: example" `
-  --body "## Summary`n- first item`n- second item`n`n## Validation`n- run tests"
+```bash
+git commit -m "feat: add search filter" -m "- support status filter" -m "- add tests"
 ```
 
-上述指令在 GitHub PR 中會正確顯示為多行 Markdown。
+#### 3. 需要精準多行排版時（建議）
 
----
+- 使用 `-F` 從標準輸入讀取，直接傳遞真實換行
 
-### 與 `-Command` 搭配時的範例
+##### Bash（heredoc）
 
-```powershell
-pwsh -Command "gh pr create --title `"feat: example`" --body `"## Summary`n- item A`n- item B`"`"
+```bash
+git commit -F - <<'EOF'
+feat: add search filter
+
+- support status filter
+- add tests
+EOF
 ```
 
-#### 說明
+##### PowerShell（here-string）
 
-- `` `n `` 會在 PowerShell 解析階段轉為實際換行
-- `gh` 接收到的已是包含 LF 的字串
-- GitHub Markdown 會正確渲染段落與清單
+```powershell
+@"
+feat: add search filter
+
+- support status filter
+- add tests
+"@ | git commit -F -
+```
+
+#### 4. Shell 專屬 escape 規則（僅在必須內嵌字串時使用）
+
+| Shell | 正確換行 | 錯誤寫法 |
+|---|---|---|
+| Bash | `$'Line1\nLine2'` 或 heredoc | `"Line1\nLine2"`（通常會變成字面 `\n`） |
+| PowerShell | `"Line1`nLine2"` 或 here-string | `"Line1\nLine2"` |
 
 ---
 
 ### 常見錯誤與後果
 
-| 寫法 | 結果 |
-|---|---|
-| `--body "Line1\nLine2"` | PR 內容顯示為 `Line1\nLine2` |
-| ``--body "Line1`nLine2"`` | PR 內容正確換行 |
-| 假設 CLI 會處理 `\n` | 必然失敗 |
+| 情境 | 寫法 | 結果 |
+|---|---|---|
+| Bash commit | `git commit -m "Line1\nLine2"` | commit message 出現字面 `\n` |
+| PowerShell commit | `git commit -m "Line1\nLine2"` | commit message 出現字面 `\n` |
+| PowerShell commit | ``git commit -m "Line1`nLine2"`` | commit message 正確換行 |
+
+---
+
+### 驗證方式（提交後必做）
+
+```bash
+git log -1 --pretty=%B
+```
+
+- 若輸出含字面 `\n`，代表換行規則使用錯誤
+- 正確結果應為真正分行的 commit message
 
 ---
 
 ### 設計理由（不可省略）
 
-- PowerShell 的 escape 設計與 Unix shell 不同
-- `\n` 在 PowerShell 不是標準換行 escape
-- 明確使用 `` `n `` 可避免：
-  - Shell 差異
-  - CI 環境行為不一致
-  - CLI 版本誤判
+- Bash 與 PowerShell 的 escape 設計不同
+- `git` 與 `gh` 不會自動解譯 `\n`
+- 先在 shell 端產生真實 LF，可避免本機與 CI 行為不一致
 
 ## 常見問題
 
